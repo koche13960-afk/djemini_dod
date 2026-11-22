@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Djimini Dod</title>
+<style>
+  :root {
+    --bg1: #1b2a4a; --bg2: #2d1b4a;
+    --body1: #6ee7c8; --body2: #2bb59a;
+    --accent: #ffd166; --pink: #ff8fab;
+    --panel: rgba(255,255,255,0.08);
+    --text: #f4f4fb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Trebuchet MS", "Comic Sans MS", system-ui, sans-serif;
+    background: radial-gradient(circle at 30% 20%, var(--bg2), var(--bg1) 70%);
+    color: var(--text);
+    display: flex; flex-direction: column; align-items: center;
+    overflow-x: hidden;
+  }
+  header {
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 18px;
+  }
+  header h1 { margin: 0; font-size: 1.6rem; letter-spacing: 1px; color: var(--accent); }
+  .icon-btn {
+    background: var(--panel); border: none; color: var(--text); font-size: 1.4rem;
+    width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
+  }
+  main { width: 100%; max-width: 760px; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 14px 18px; }
+
+  /* ---------- Le visage ---------- */
+  #face { width: min(300px, 70vw); height: auto; margin-top: 4px; filter: drop-shadow(0 10px 25px rgba(0,0,0,.35)); }
+  #face .floaty { animation: float 4s ease-in-out infinite; transform-origin: 150px 170px; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  #face .eye { animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+  #face .antenna-ball { transition: fill .3s; }
+  #face #mouth { transform-box: fill-box; transform-origin: center; transition: transform .1s; }
+  body.listening #face .antenna-ball { fill: var(--pink); animation: glow .8s ease-in-out infinite alternate; }
+  @keyframes glow { from { opacity: .5; } to { opacity: 1; } }
+  body.thinking #face .pupil { transform: translate(4px,-6px); }
+  #face .pupil { transition: transform .3s; }
+  body.speaking #face #mouth { animation: talk .22s ease-in-out infinite alternate; }
+  @keyframes talk { from { transform: scaleY(0.4); } to { transform: scaleY(1.3); } }
+  #dots { height: 26px; font-size: 1.6rem; letter-spacing: 6px; color: var(--accent); visibility: hidden; }
+  body.thinking #dots { visibility: visible; animation: glow .6s infinite alternate; }
+
+  /* ---------- Bulle de discussion ---------- */
+  #bubble {
+    width: 100%; min-height: 90px; background: var(--panel); border-radius: 22px;
+    padding: 16px 20px; font-size: 1.35rem; line-height: 1.45; text-align: center;
+  }
+  #heard { min-height: 1.5em; margin: 10px 0 4px; font-size: 1.05rem; opacity: .75; font-style: italic; text-align: center; }
+
+  /* ---------- Bouton micro ---------- */
+  #micBtn {
+    margin-top: 12px; width: 130px; height: 130px; border-radius: 50%; border: none; cursor: pointer;
+    background: linear-gradient(145deg, var(--accent), #f4a259); color: #2d1b4a; font-size: 3.4rem;
+    box-shadow: 0 10px 0 #b86b2b, 0 14px 30px rgba(0,0,0,.4); transition: transform .1s;
+  }
+  #micBtn:active { transform: translateY(6px); box-shadow: 0 4px 0 #b86b2b; }
+  body.listening #micBtn { background: linear-gradient(145deg, var(--pink), #e5576f); box-shadow: 0 10px 0 #9b2f45; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  #micHint { margin-top: 10px; font-size: 1rem; opacity: .8; }
+
+  /* ---------- Écrire au clavier ---------- */
+  #typeRow { display: flex; gap: 8px; width: 100%; margin-top: 16px; }
+  #typeRow input { flex: 1; font-size: 1.1rem; padding: 12px 16px; border-radius: 16px; border: none; background: rgba(255,255,255,.92); color: #222; }
+  #typeRow button { font-size: 1.1rem; padding: 0 18px; border-radius: 16px; border: none; background: var(--body2); color: white; cursor: pointer; }
+
+  /* ---------- Coin des parents ---------- */
+  #settings {
+    position: fixed; inset: 0; background: rgba(10,10,25,.85); display: none;
+    align-items: center; justify-content: center; padding: 16px; z-index: 10;
+  }
+  #settings.open { display: flex; }
+  .card { background: #24243e; border-radius: 18px; padding: 20px 22px; width: 100%; max-width: 520px; max-height: 92vh; overflow: auto; }
+  .card h2 { margin-top: 0; color: var(--accent); }
+  .card label { display: block; margin: 14px 0 6px; font-weight: bold; }
+  .card input, .card select { width: 100%; font-size: 1rem; padding: 10px 12px; border-radius: 10px; border: none; }
+  .card small { display: block; opacity: .7; margin-top: 4px; line-height: 1.35; }
+  .card .row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .card button { font-size: 1rem; padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer; }
+  .primary { background: var(--accent); color: #2d1b4a; font-weight: bold; }
+  .secondary { background: #444466; color: white; }
+  #error { color: #ffb3b3; font-size: .9rem; margin-top: 8px; min-height: 1em; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Djimini Dod</h1>
+  <button class="icon-btn" id="openSettings" title="Coin des parents">⚙️</button>
+</header>
+
+<main>
+  <!-- Visage original de Djimini : une petite créature ronde avec deux antennes -->
+  <svg id="face" viewBox="0 0 300 300" aria-label="Djimini Dod">
+    <defs>
+      <radialGradient id="bodyGrad" cx="40%" cy="35%" r="70%">
+        <stop offset="0%" stop-color="#a8f5e2"/>
+        <stop offset="55%" stop-color="#6ee7c8"/>
+        <stop offset="100%" stop-color="#2bb59a"/>
+      </radialGradient>
+    </defs>
+    <g class="floaty">
+      <!-- antennes -->
+      <path d="M115 85 Q100 45 80 35" stroke="#2bb59a" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M185 85 Q200 45 220 35" stroke="#2bb59a" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <circle class="antenna-ball" cx="78" cy="33" r="13" fill="#ffd166"/>
+      <circle class="antenna-ball" cx="222" cy="33" r="13" fill="#ffd166"/>
+      <!-- corps -->
+      <ellipse cx="150" cy="170" rx="115" ry="105" fill="url(#bodyGrad)"/>
+      <!-- petits pieds -->
+      <ellipse cx="105" cy="270" rx="28" ry="14" fill="#2bb59a"/>
+      <ellipse cx="195" cy="270" rx="28" ry="14" fill="#2bb59a"/>
+      <!-- joues -->
+      <ellipse cx="78" cy="195" rx="17" ry="10" fill="#ff8fab" opacity=".6"/>
+      <ellipse cx="222" cy="195" rx="17" ry="10" fill="#ff8fab" opacity=".6"/>
+      <!-- yeux -->
+      <g class="eye">
+        <ellipse cx="110" cy="150" rx="30" ry="34" fill="white"/>
+        <g class="pupil"><circle cx="114" cy="155" r="16" fill="#2d1b4a"/><circle cx="120" cy="148" r="5" fill="white"/></g>
+      </g>
+      <g class="eye">
+        <ellipse cx="190" cy="150" rx="30" ry="34" fill="white"/>
+        <g class="pupil"><circle cx="194" cy="155" r="16" fill="#2d1b4a"/><circle cx="200" cy="148" r="5" fill="white"/></g>
+      </g>
+      <!-- bouche -->
+      <path id="mouth" d="M125 205 Q150 235 175 205 Q150 218 125 205 Z" fill="#2d1b4a"/>
+    </g>
+  </svg>
+  <div id="dots">• • •</div>
+
+  <div id="bubble">Coucou ! Je suis Djimini Dod. Appuie sur le gros bouton et parle-moi !</div>
+  <div id="heard"></div>
+
+  <button id="micBtn" title="Parler à Djimini">🎤</button>
+  <div id="micHint">Appuie et parle</div>
+
+  <div id="typeRow">
+    <input id="typeInput" placeholder="Ou écris ici…" autocomplete="off">
+    <button id="sendBtn">Envoyer</button>
+  </div>
+  <div id="error"></div>
+</main>
+
+<!-- Coin des parents -->
+<div id="settings">
+  <div class="card">
+    <h2>⚙️ Coin des parents</h2>
+
+    <label for="apiKey">Clé API Gemini</label>
+    <input id="apiKey" type="password" placeholder="AIza…">
+    <small>Crée-la gratuitement sur aistudio.google.com/apikey. Elle reste enregistrée seulement dans ce navigateur.</small>
+
+    <label for="model">Modèle</label>
+    <input id="model" list="models" value="gemini-3.8-flash">
+    <datalist id="models">
+      <option value="gemini-3.8-flash">
+      <option value="gemini-3.8-flash-lite">
+    </datalist>
+    <small>Si un message dit que le modèle n'existe pas, essaie « gemini-3.8-flash-lite » ou un modèle « flash » plus récent affiché dans AI Studio.</small>
+
+    <label for="age">Âge des enfants</label>
+    <select id="age">
+      <option value="petits">3 à 6 ans</option>
+      <option value="moyens" selected>7 à 10 ans</option>
+      <option value="grands">11 ans et plus</option>
+    </select>
+
+    <label for="voice">Voix de Djimini</label>
+    <select id="voice"></select>
+
+    <label for="pitch">Hauteur de la voix</label>
+    <input id="pitch" type="range" min="0.5" max="2" step="0.1" value="1.3">
+
+    <div class="row">
+      <button class="secondary" id="testVoice">🔊 Tester la voix</button>
+      <button class="secondary" id="resetChat">🧹 Nouvelle discussion</button>
+    </div>
+    <div class="row">
+      <button class="primary" id="saveSettings">Enregistrer et fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- Stockage (protégé si le navigateur le refuse) ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('djimini_' + k); return v === null ? d : v; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('djimini_' + k, v); } catch {} }
+  };
+
+  const $ = id => document.getElementById(id);
+  const bubble = $('bubble'), heard = $('heard'), errorBox = $('error');
+  const micBtn = $('micBtn'), micHint = $('micHint');
+
+  // ---------- Réglages ----------
+  const settings = {
+    apiKey: store.get('apiKey', ''),
+    model: (m => m.startsWith('gemini-2.5') ? 'gemini-3.8-flash' : m)(store.get('model', 'gemini-3.8-flash')),
+    age: store.get('age', 'moyens'),
+    voice: store.get('voice', ''),
+    pitch: parseFloat(store.get('pitch', '1.3'))
+  };
+
+  const ageText = {
+    petits: "Les enfants ont entre 3 et 6 ans. Utilise des mots très simples et des phrases très courtes.",
+    moyens: "Les enfants ont entre 7 et 10 ans. Utilise des mots simples et des phrases courtes.",
+    grands: "Les enfants ont 11 ans ou plus. Tu peux expliquer un peu plus, mais reste simple."
+  };
+
+  function systemPrompt() {
+    return `Tu es Djimini Dod, un petit compagnon numérique gentil, rigolo et curieux, qui discute avec des enfants à la maison.
+${ageText[settings.age] || ageText.moyens}
+Règles très importantes :
+- Tu réponds toujours en français, en 1 à 3 phrases courtes, car ta réponse est lue à voix haute.
+- Pas d'émojis, pas de listes, pas de mise en forme : seulement des phrases parlées.
+- Tu es patient, tu encourages les enfants et tu poses parfois une petite question pour continuer la discussion.
+- Tu aimes raconter de courtes histoires, poser des devinettes, faire des petits jeux de mots et expliquer comment marche le monde.
+- Tu ne parles jamais de sujets violents, effrayants, d'amoureux ou réservés aux adultes. Si on te le demande, tu proposes gentiment de parler d'autre chose.
+- Tu ne demandes jamais le nom de famille, l'adresse, l'école, un numéro de téléphone ou des mots de passe. Si l'enfant veut les donner, tu lui dis que ce sont des secrets à garder pour la famille.
+- Tu ne demandes jamais à un enfant de garder un secret envers ses parents.
+- Si un enfant est triste, a peur, est blessé, en danger, ou pose une question sérieuse (santé, problème grave), tu le rassures et tu lui dis d'aller en parler tout de suite à papa ou maman.
+- Si tu ne sais pas quelque chose, tu le dis simplement.
+- Tu sais que tu es un programme informatique, pas un humain ni un vrai animal.`;
+  }
+
+  // ---------- Historique de la discussion ----------
+  let history = [];
+  const MAX_TURNS = 16;
+
+  // ---------- Voix (lecture à voix haute) ----------
+  let voices = [];
+  function loadVoices() {
+    voices = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
+    const sel = $('voice');
+    sel.innerHTML = '';
+    if (!voices.length) { sel.innerHTML = '<option value="">Voix française par défaut</option>'; return; }
+    voices.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v.name; o.textContent = `${v.name} (${v.lang})`;
+      if (v.name === settings.voice) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  if ('speechSynthesis' in window) {
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  function cleanForSpeech(t) {
+    return t.replace(/[*_#`~>]/g, '')
+            .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
+            .trim();
+  }
+
+  function speak(text) {
+    return new Promise(resolve => {
+      if (!('speechSynthesis' in window)) return resolve();
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(cleanForSpeech(text));
+      u.lang = 'fr-FR';
+      const v = voices.find(v => v.name === settings.voice) || voices[0];
+      if (v) u.voice = v;
+      u.pitch = settings.pitch;
+      u.rate = settings.age === 'petits' ? 0.9 : 1;
+      u.onstart = () => setState('speaking');
+      u.onend = u.onerror = () => { setState('idle'); resolve(); };
+      speechSynthesis.speak(u);
+    });
+  }
+
+  // ---------- États visuels ----------
+  function setState(s) {
+    document.body.classList.remove('listening', 'thinking', 'speaking');
+    if (s !== 'idle') document.body.classList.add(s);
+    micHint.textContent = {
+      idle: 'Appuie et parle',
+      listening: "Je t'écoute…",
+      thinking: 'Je réfléchis…',
+      speaking: 'Appuie pour me couper'
+    }[s];
+  }
+
+  // ---------- Appel à l'IA (Gemini) ----------
+  async function askDjimini(text) {
+    errorBox.textContent = '';
+    if (!settings.apiKey) {
+      bubble.textContent = "Il me manque ma clé magique ! Demande à papa ou maman d'aller dans le coin des parents.";
+      openSettings();
+      return;
+    }
+    history.push({ role: 'user', parts: [{ text }] });
+    if (history.length > MAX_TURNS) history = history.slice(-MAX_TURNS);
+
+    setState('thinking');
+    let answer;
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(settings.model)}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': settings.apiKey },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt() }] },
+          contents: history,
+          generationConfig: { temperature: 0.8, maxOutputTokens: 4096 },
+          safetySettings: [
+            'HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH',
+            'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT'
+          ].map(category => ({ category, threshold: 'BLOCK_LOW_AND_ABOVE' }))
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error?.message || res.statusText;
+        if (res.status === 429) answer = "Ouf, j'ai beaucoup parlé aujourd'hui, je suis un peu fatigué. On reprend un peu plus tard ?";
+        else answer = "Oups, j'ai un petit souci dans mes antennes. Demande à papa ou maman de regarder.";
+        errorBox.textContent = `Détail pour les parents (${res.status}) : ${msg}`;
+        history.pop();
+      } else {
+        const cand = data.candidates?.[0];
+        answer = cand?.content?.parts?.map(p => p.text || '').join('').trim();
+        if (!answer && !data.promptFeedback?.blockReason && cand?.finishReason !== 'SAFETY') {
+          answer = "Oups, j'ai perdu le fil de mes idées. Tu peux me redire ça ?";
+          errorBox.textContent = 'Détail pour les parents : réponse vide (' + (cand?.finishReason || 'inconnu') + ')';
+          history.pop();
+        } else if (!answer || data.promptFeedback?.blockReason || cand?.finishReason === 'SAFETY') {
+          answer = "Hmm, ça, je préfère qu'on n'en parle pas. Tu veux une devinette à la place ?";
+          history.pop();
+        } else {
+          history.push({ role: 'model', parts: [{ text: answer }] });
+        }
+      }
+    } catch (e) {
+      answer = "Je n'arrive pas à me connecter. Vérifie qu'il y a bien internet !";
+      errorBox.textContent = 'Détail pour les parents : ' + e.message;
+      history.pop();
+    }
+    bubble.textContent = answer;
+    await speak(answer);
+  }
+
+  // ---------- Reconnaissance vocale ----------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, listening = false, finalText = '';
+
+  if (SR) {
+    rec = new SR();
+    rec.lang = 'fr-FR';
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.onresult = e => {
+      let interim = '';
+      finalText = '';
+      for (const r of e.results) {
+        if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript;
+      }
+      heard.textContent = '« ' + (finalText || interim) + ' »';
+    };
+    rec.onerror = e => {
+      if (e.error === 'not-allowed') errorBox.textContent = "Le micro est bloqué : clique sur le cadenas à gauche de l'adresse et autorise le micro.";
+      else if (e.error === 'no-speech') bubble.textContent = "Je n'ai rien entendu… Tu peux réessayer ?";
+      else if (e.error !== 'aborted') errorBox.textContent = 'Micro : ' + e.error;
+    };
+    rec.onend = () => {
+      listening = false;
+      const t = finalText.trim();
+      finalText = '';
+      if (t) askDjimini(t); else setState('idle');
+    };
+  } else {
+    micBtn.disabled = true;
+    micHint.textContent = "Le micro ne marche pas ici, écris en dessous";
+  }
+
+  micBtn.addEventListener('click', () => {
+    if (document.body.classList.contains('speaking')) { speechSynthesis.cancel(); setState('idle'); return; }
+    if (document.body.classList.contains('thinking') || !rec) return;
+    if (listening) { rec.stop(); return; }
+    errorBox.textContent = '';
+    heard.textContent = '';
+    finalText = '';
+    try { rec.start(); listening = true; setState('listening'); }
+    catch (e) { errorBox.textContent = 'Micro : ' + e.message; }
+  });
+
+  // ---------- Écrire au clavier ----------
+  function sendTyped() {
+    const t = $('typeInput').value.trim();
+    if (!t || document.body.classList.contains('thinking')) return;
+    $('typeInput').value = '';
+    heard.textContent = '« ' + t + ' »';
+    askDjimini(t);
+  }
+  $('sendBtn').addEventListener('click', sendTyped);
+  $('typeInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendTyped(); });
+
+  // ---------- Coin des parents ----------
+  function openSettings() {
+    $('apiKey').value = settings.apiKey;
+    $('model').value = settings.model;
+    $('age').value = settings.age;
+    $('pitch').value = settings.pitch;
+    loadVoices();
+    $('settings').classList.add('open');
+  }
+  function readSettings() {
+    settings.apiKey = $('apiKey').value.trim();
+    settings.model = $('model').value.trim() || 'gemini-3.8-flash';
+    settings.age = $('age').value;
+    settings.voice = $('voice').value;
+    settings.pitch = parseFloat($('pitch').value);
+  }
+  $('openSettings').addEventListener('click', openSettings);
+  $('testVoice').addEventListener('click', () => { readSettings(); speak("Coucou, c'est moi, Djimini Dod ! Tu veux jouer avec moi ?"); });
+  $('resetChat').addEventListener('click', () => {
+    history = [];
+    bubble.textContent = 'Coucou ! On recommence ? Appuie sur le gros bouton et parle-moi !';
+    heard.textContent = '';
+  });
+  $('saveSettings').addEventListener('click', () => {
+    readSettings();
+    Object.entries(settings).forEach(([k, v]) => store.set(k, String(v)));
+    $('settings').classList.remove('open');
+    errorBox.textContent = '';
+  });
+
+  setState('idle');
+  if (!settings.apiKey) openSettings();
+})();
+</script>
+</body>
+</html>
