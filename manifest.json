@@ -1,0 +1,19 @@
+{
+  "name": "Djimini Dod",
+  "short_name": "Djimini",
+  "description": "Le petit robot compagnon qui discute avec les enfants.",
+  "id": "/djemini_dod/",
+  "start_url": "/djemini_dod/",
+  "scope": "/djemini_dod/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f8fb",
+  "theme_color": "#f4f8fb",
+  "lang": "fr",
+  "categories": ["kids", "education", "entertainment"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
