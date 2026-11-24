@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f8fb">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Djimini Dod</title>
+<!-- version 16 -->
+<link rel="preconnect" href="https://api.groq.com" crossorigin>
+<link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f8fb;
+    --card: #ffffff;
+    --ink: #0d3b5c;
+    --muted: #7b93a6;
+    --blue: #1e88b6;         /* bleu archipel */
+    --blue-soft: #d9eef7;
+    --yellow: #f6c344;       /* jaune impérial */
+    --pink: #ff9db5;
+    --eye: #7fe3ff;          /* couleur des yeux, change selon le tempérament */
+    --shadow: 0 12px 40px rgba(13, 59, 92, .10);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Nunito", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex; flex-direction: column;
+    min-height: 100dvh;
+  }
+  button { font-family: inherit; }
+
+  /* ---------- En-tête ---------- */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 0;
+  }
+  .brand { font-weight: 800; font-size: 1.25rem; letter-spacing: .2px; }
+  .brand span { color: var(--blue); }
+  .brand small { font-size: .65rem; color: var(--muted); font-weight: 700; margin-left: 4px; }
+  .ghost {
+    width: 44px; height: 44px; border-radius: 14px; border: none; cursor: pointer;
+    background: var(--card); box-shadow: var(--shadow); color: var(--ink);
+    display: grid; place-items: center;
+  }
+  .ghost svg { width: 22px; height: 22px; }
+
+  /* ---------- Scène ---------- */
+  main {
+    flex: 1; width: 100%; max-width: 620px; margin: 0 auto;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 20px 0; gap: 14px;
+  }
+  .stage { position: relative; display: grid; place-items: center; }
+  .halo {
+    position: absolute; width: 78%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle, var(--blue-soft) 0%, rgba(217,238,247,0) 70%);
+    transition: transform .4s;
+  }
+  body.listening .halo { transform: scale(1.15); animation: breathe 1.2s ease-in-out infinite; }
+  @keyframes breathe { 50% { transform: scale(1.25); } }
+
+  #robot { width: min(250px, 58vw); height: auto; position: relative; }
+  #robot .float { animation: float 4.5s ease-in-out infinite; }
+  @keyframes float { 50% { transform: translateY(-7px); } }
+  #robot .eye { transform-box: fill-box; transform-origin: center; animation: blink 5.5s infinite; fill: var(--eye); transition: fill .4s; }
+  @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.12); } }
+  #robot .eyes { transition: transform .35s; }
+  body.thinking #robot .eyes { transform: translate(5px, -5px); }
+  body.listening #robot .eye { transform: scale(1.12); animation: none; }
+  #robot .mouth { transform-box: fill-box; transform-origin: center top; transition: transform .1s; }
+  body.speaking #robot .mouth { animation: talk .2s ease-in-out infinite alternate; }
+  @keyframes talk { from { transform: scaleY(.5); } to { transform: scaleY(1.6); } }
+  #robot .bulb { fill: var(--yellow); transition: fill .3s; }
+  body.listening #robot .bulb { fill: var(--pink); animation: pulse .7s infinite alternate; }
+  body.thinking #robot .bulb { animation: pulse .35s infinite alternate; }
+  @keyframes pulse { from { opacity: .45; } to { opacity: 1; } }
+  #robot .arm-r { transform-box: fill-box; transform-origin: 20% 20%; }
+  body.speaking .arm-r { animation: wave 1.2s ease-in-out infinite; }
+  @keyframes wave { 50% { transform: rotate(-18deg); } }
+
+
+  /* ---------- Animations du robot ---------- */
+  #robot { cursor: pointer; overflow: visible; }
+  #robot .bot, #robot .head, #robot .body, #robot .arm-l, #robot .arm-r, #robot .foot-l, #robot .foot-r, #robot .antenna, #robot .face {
+    transform-box: fill-box; }
+  #robot .bot { transform-origin: 50% 100%; }
+  #robot .head { transform-origin: 50% 90%; }
+  #robot .antenna { transform-origin: 50% 100%; }
+  #robot .arm-l { transform-origin: 50% 15%; }
+  #robot .arm-r { transform-origin: 50% 15%; }
+  #robot .foot-l, #robot .foot-r { transform-origin: 50% 100%; }
+  #robot .happy-eyes { opacity: 0; transition: opacity .2s; }
+  #robot .notes { opacity: 0; }
+
+  /* la tête suit doucement la parole */
+  body.speaking .head { animation: bob .9s ease-in-out infinite; }
+  @keyframes bob { 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+  #robot .antenna { animation: wiggle 3s ease-in-out infinite; }
+  @keyframes wiggle { 0%,100% { transform: rotate(0); } 50% { transform: rotate(6deg); } }
+
+  /* danse */
+  #robot.dance .bot { animation: danceBody .5s ease-in-out 6 alternate; }
+  @keyframes danceBody { from { transform: rotate(-8deg) translateY(0); } to { transform: rotate(8deg) translateY(-10px); } }
+  #robot.dance .head { animation: danceHead .5s ease-in-out 6 alternate-reverse; }
+  @keyframes danceHead { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+  #robot.dance .arm-l { animation: armUp .5s ease-in-out 6 alternate; }
+  #robot.dance .arm-r { animation: armUp2 .5s ease-in-out 6 alternate-reverse; }
+  @keyframes armUp { from { transform: rotate(20deg); } to { transform: rotate(150deg); } }
+  @keyframes armUp2 { from { transform: rotate(-20deg); } to { transform: rotate(-150deg); } }
+  #robot.dance .foot-l { animation: tap .25s ease-in-out 12 alternate; }
+  #robot.dance .foot-r { animation: tap .25s ease-in-out 12 alternate-reverse; }
+  @keyframes tap { to { transform: translateY(-6px) rotate(-10deg); } }
+  #robot.dance .happy-eyes, #robot.giggle .happy-eyes, #robot.wave .happy-eyes { opacity: 1; }
+  #robot.dance .eyes, #robot.dance .shine, #robot.giggle .eyes, #robot.giggle .shine, #robot.wave .eyes, #robot.wave .shine { opacity: 0; }
+  #robot.dance .notes { animation: notes 3s ease-out; }
+  @keyframes notes { 0% { opacity: 0; transform: translateY(10px); } 20%,80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-25px); } }
+
+  /* hoche la tête « oui » */
+  #robot.nod .head { animation: nod .35s ease-in-out 4 alternate; }
+  @keyframes nod { to { transform: translateY(6px) rotate(0); } }
+
+  /* penche la tête, curieux */
+  #robot.tilt .head { animation: tilt 2.2s ease-in-out; }
+  @keyframes tilt { 20%,70% { transform: rotate(-14deg); } }
+  #robot.tilt .face { animation: lookSide 2.2s ease-in-out; }
+  @keyframes lookSide { 20%,70% { transform: translateX(-6px); } }
+
+  /* regarde à gauche puis à droite */
+  #robot.look .face { animation: look 2.6s ease-in-out; }
+  @keyframes look { 20%,35% { transform: translateX(-10px); } 60%,75% { transform: translateX(10px); } }
+  #robot.look .head { animation: lookHead 2.6s ease-in-out; }
+  @keyframes lookHead { 20%,35% { transform: rotate(-6deg); } 60%,75% { transform: rotate(6deg); } }
+
+  /* saute de joie */
+  #robot.jump .bot { animation: jump .8s cubic-bezier(.3,.7,.4,1) 2; }
+  @keyframes jump { 0%,100% { transform: translateY(0) scale(1,1); } 15% { transform: translateY(0) scale(1.08,.9); } 50% { transform: translateY(-34px) scale(.95,1.06); } 85% { transform: translateY(0) scale(1.06,.94); } }
+  #robot.jump .arm-l { animation: armUp .4s ease-in-out 4 alternate; }
+  #robot.jump .arm-r { animation: armUp2 .4s ease-in-out 4 alternate; }
+
+  /* fait coucou */
+  #robot.wave .arm-r { animation: waveHi .3s ease-in-out 8 alternate; }
+  @keyframes waveHi { from { transform: rotate(-130deg); } to { transform: rotate(-165deg); } }
+  #robot.wave .head { animation: tilt 2.4s ease-in-out; }
+
+  /* toupie */
+  #robot.spin .bot { animation: spin 1.2s ease-in-out; }
+  @keyframes spin { 0% { transform: scaleX(1); } 25% { transform: scaleX(-1); } 50% { transform: scaleX(1); } 75% { transform: scaleX(-1); } 100% { transform: scaleX(1); } }
+
+  /* rigole (quand on le chatouille) */
+  #robot.giggle .bot { animation: shake .12s linear 10 alternate; }
+  @keyframes shake { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+
+  body.standby #robot .bulb { fill: #b9f3d0; animation: pulse 2s infinite alternate; }
+
+  #media:empty { display: none; }
+  #media { width: 100%; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  #media a {
+    display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; font-size: 1.05rem;
+    padding: 14px 20px; border-radius: 18px; color: white; box-shadow: var(--shadow);
+  }
+  #media a.yt { background: #e62117; }
+  #media a.sp { background: #1db954; }
+
+  /* ---------- Qui parle ? ---------- */
+  #who { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  #who:empty { display: none; }
+  #who button {
+    border: 2px solid var(--blue-soft); background: var(--card); color: var(--ink); border-radius: 999px;
+    padding: 8px 16px; font: inherit; font-weight: 800; font-size: 1rem; cursor: pointer; box-shadow: var(--shadow);
+  }
+  #who button.on { background: var(--blue); border-color: var(--blue); color: white; }
+  /* ---------- Famille et souvenirs (paramètres) ---------- */
+  .kid { display: grid; grid-template-columns: 1.2fr .6fr 1.6fr auto; gap: 6px; margin-bottom: 6px; }
+  .kid input { min-width: 0; }
+  .x { border: none; background: #fde7ec; color: #c2385a; border-radius: 12px; width: 40px; font-weight: 800; cursor: pointer; }
+  .mem { display: flex; gap: 8px; align-items: center; background: #f4f9fc; border-radius: 12px; padding: 8px 10px; margin-bottom: 6px; font-size: .9rem; }
+  .mem span { flex: 1; }
+  .mem .x { height: 30px; width: 30px; }
+
+  /* ---------- Bulle ---------- */
+  .bubble {
+    width: 100%; background: var(--card); border-radius: 26px; box-shadow: var(--shadow);
+    padding: 18px 22px; text-align: center; font-size: 1.3rem; line-height: 1.45; font-weight: 700;
+    min-height: 74px; display: grid; place-items: center;
+  }
+  .bubble .dots { display: none; gap: 6px; }
+  .bubble .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); opacity: .3; animation: dot 1s infinite; }
+  .bubble .dots i:nth-child(2) { animation-delay: .15s; }
+  .bubble .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 30% { opacity: 1; transform: translateY(-4px); } }
+  body.thinking.empty .bubble .dots { display: flex; }
+  body.thinking.empty .bubble #say { display: none; }
+  #heard { color: var(--muted); font-size: 1rem; min-height: 1.4em; text-align: center; font-weight: 700; }
+  #error:empty { display: none; }
+  #error {
+    width: 100%; background: #fff4d6; color: #8a5a00; border-radius: 16px; padding: 10px 14px;
+    font-size: .9rem; font-weight: 700; text-align: center;
+  }
+
+  /* ---------- Barre du bas ---------- */
+  .dock {
+    width: 100%; max-width: 620px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center; gap: 22px;
+    padding: 14px 20px calc(40px + env(safe-area-inset-bottom));
+  }
+  #mic {
+    width: 96px; height: 96px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--blue); color: white; display: grid; place-items: center;
+    box-shadow: 0 10px 30px rgba(30,136,182,.35); transition: transform .15s, background .3s;
+  }
+  #mic svg { width: 40px; height: 40px; }
+  #mic:active { transform: scale(.94); }
+  body.listening #mic { background: var(--pink); box-shadow: 0 0 0 12px rgba(255,157,181,.25), 0 10px 30px rgba(255,157,181,.5); }
+  body.speaking #mic { background: var(--ink); }
+  #hint { position: absolute; top: 104px; white-space: nowrap; font-size: .85rem; color: var(--muted); font-weight: 700; }
+  .mic-wrap { position: relative; display: grid; place-items: center; }
+
+  #typeBar { display: none; width: 100%; max-width: 620px; margin: 0 auto; padding: 0 20px; gap: 8px; }
+  #typeBar.open { display: flex; }
+  #typeBar input {
+    flex: 1; font: inherit; font-size: 1.05rem; padding: 13px 16px; border-radius: 16px;
+    border: 2px solid var(--blue-soft); background: var(--card); color: var(--ink); outline: none;
+  }
+  #typeBar input:focus { border-color: var(--blue); }
+  #typeBar button { border: none; border-radius: 16px; padding: 0 18px; background: var(--blue); color: white; font-weight: 800; font-size: 1rem; cursor: pointer; }
+
+  /* ---------- Paramètres ---------- */
+  .sheet-bg {
+    position: fixed; inset: 0; background: rgba(13,59,92,.35); backdrop-filter: blur(3px);
+    display: none; align-items: flex-end; justify-content: center; z-index: 20;
+  }
+  .sheet-bg.open { display: flex; }
+  .sheet {
+    width: 100%; max-width: 560px; max-height: 92dvh; overflow: auto;
+    background: var(--card); border-radius: 28px 28px 0 0; padding: 22px 22px 28px;
+    animation: up .25s ease-out;
+  }
+  @media (min-width: 700px) { .sheet-bg { align-items: center; } .sheet { border-radius: 28px; } }
+  @keyframes up { from { transform: translateY(40px); opacity: 0; } }
+  .sheet h2 { margin: 0 0 4px; font-size: 1.3rem; }
+  .sheet .sub { color: var(--muted); margin: 0 0 14px; font-size: .9rem; }
+  .field { margin-top: 16px; }
+  .field > label { display: block; font-weight: 800; margin-bottom: 8px; font-size: .95rem; }
+  .field small { display: block; color: var(--muted); margin-top: 6px; font-size: .8rem; line-height: 1.35; }
+  .sheet input[type=text], .sheet input[type=password], .sheet select {
+    width: 100%; font: inherit; font-size: 1rem; padding: 12px 14px; border-radius: 14px;
+    border: 2px solid var(--blue-soft); background: #fbfdfe; color: var(--ink); outline: none;
+  }
+  .sheet input:focus, .sheet select:focus { border-color: var(--blue); }
+  .moods { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .mood {
+    border: 2px solid var(--blue-soft); background: #fbfdfe; border-radius: 16px; padding: 10px 12px;
+    text-align: left; cursor: pointer; color: var(--ink);
+  }
+  .mood b { display: block; font-size: .95rem; }
+  .mood span { font-size: .78rem; color: var(--muted); }
+  .mood.on { border-color: var(--blue); background: var(--blue-soft); }
+  .seg { display: flex; background: #eef5f9; border-radius: 14px; padding: 4px; gap: 4px; }
+  .seg button { flex: 1; border: none; background: transparent; padding: 10px 6px; border-radius: 10px; font-weight: 800; color: var(--muted); cursor: pointer; font-size: .9rem; }
+  .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 2px 8px rgba(13,59,92,.1); }
+  input[type=range] { width: 100%; accent-color: var(--blue); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+  .btn { border: none; border-radius: 14px; padding: 12px 16px; font-weight: 800; font-size: .95rem; cursor: pointer; }
+  .btn.soft { background: #eef5f9; color: var(--ink); }
+  .btn.main { background: var(--blue); color: white; flex: 1; }
+  #testResult { margin-top: 10px; font-size: .85rem; white-space: pre-wrap; line-height: 1.4; color: var(--ink); }
+  details { margin-top: 18px; border-top: 1px solid #e6eef3; padding-top: 12px; }
+  summary { cursor: pointer; font-weight: 800; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Djimini <span>Dod</span><small>v16</small></div>
+  <div style="display:flex;gap:10px">
+    <button class="ghost" id="kbBtn" title="Écrire">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="3"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 15h10"/></svg>
+    </button>
+    <button class="ghost" id="setBtn" title="Paramètres">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="stage">
+    <div class="halo"></div>
+    <!-- Petit robot kawaii -->
+    <svg id="robot" viewBox="0 -12 240 272" aria-label="Djimini Dod">
+      <defs>
+        <linearGradient id="shell" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e4f1f8"/>
+        </linearGradient>
+        <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#12466b"/><stop offset="1" stop-color="#0b2f4a"/>
+        </linearGradient>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <ellipse cx="120" cy="248" rx="58" ry="8" fill="#0d3b5c" opacity=".08"/>
+      <g class="float">
+       <g class="bot">
+        <g class="head">
+          <!-- antenne -->
+          <g class="antenna">
+            <line x1="120" y1="30" x2="120" y2="12" stroke="#1e88b6" stroke-width="5" stroke-linecap="round"/>
+            <circle class="bulb" cx="120" cy="10" r="9" filter="url(#glow)"/>
+          </g>
+          <!-- oreilles -->
+          <rect x="18" y="72" width="22" height="46" rx="11" fill="#1e88b6"/>
+          <rect x="200" y="72" width="22" height="46" rx="11" fill="#1e88b6"/>
+          <!-- tête -->
+          <rect x="32" y="28" width="176" height="136" rx="56" fill="url(#shell)" stroke="#cfe5f0" stroke-width="2"/>
+          <!-- écran visage -->
+          <rect x="52" y="50" width="136" height="94" rx="40" fill="url(#screen)"/>
+          <g class="face">
+            <g class="eyes" filter="url(#glow)">
+              <ellipse class="eye" cx="92" cy="92" rx="13" ry="16"/>
+              <ellipse class="eye" cx="148" cy="92" rx="13" ry="16"/>
+            </g>
+            <g class="shine">
+              <circle cx="96" cy="86" r="4" fill="#fff" opacity=".9"/>
+              <circle cx="152" cy="86" r="4" fill="#fff" opacity=".9"/>
+            </g>
+            <!-- yeux rieurs ^ ^ (pendant la danse) -->
+            <g class="happy-eyes" stroke="#7fe3ff" stroke-width="5" fill="none" stroke-linecap="round" filter="url(#glow)">
+              <path d="M80 96 Q92 80 104 96"/><path d="M136 96 Q148 80 160 96"/>
+            </g>
+          </g>
+          <ellipse cx="72" cy="118" rx="10" ry="6" fill="#ff9db5" opacity=".55"/>
+          <ellipse cx="168" cy="118" rx="10" ry="6" fill="#ff9db5" opacity=".55"/>
+          <path class="mouth" d="M110 118 Q120 128 130 118" stroke="#7fe3ff" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#glow)"/>
+        </g>
+        <!-- bras -->
+        <rect class="arm-l" x="52" y="178" width="20" height="40" rx="10" fill="#1e88b6"/>
+        <rect class="arm-r" x="168" y="178" width="20" height="40" rx="10" fill="#1e88b6"/>
+        <!-- corps -->
+        <g class="body">
+          <rect x="74" y="168" width="92" height="64" rx="28" fill="url(#shell)" stroke="#cfe5f0" stroke-width="2"/>
+          <path d="M120 182 C112 194 108 200 108 206 a12 12 0 0 0 24 0 c0 -6 -4 -12 -12 -24 z" fill="#f6c344"/>
+          <path d="M114 206 a6 6 0 0 0 6 6" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".8"/>
+        </g>
+        <!-- pieds -->
+        <rect class="foot-l" x="86" y="228" width="28" height="14" rx="7" fill="#1e88b6"/>
+        <rect class="foot-r" x="126" y="228" width="28" height="14" rx="7" fill="#1e88b6"/>
+       </g>
+      </g>
+      <!-- petites notes de musique (danse) -->
+      <g class="notes" fill="#1e88b6">
+        <text x="20" y="40" font-size="26">♪</text><text x="200" y="60" font-size="22">♫</text><text x="210" y="20" font-size="18">♪</text>
+      </g>
+    </svg>
+  </div>
+
+  <div id="who"></div>
+  <div class="bubble">
+    <div id="say">Coucou ! Appuie sur le bouton bleu et parle-moi.</div>
+    <div class="dots"><i></i><i></i><i></i></div>
+  </div>
+  <div id="error"></div>
+  <div id="media"></div>
+  <div id="heard"></div>
+</main>
+
+<div id="typeBar">
+  <input id="typeInput" placeholder="Écris à Djimini…" autocomplete="off">
+  <button id="sendBtn">Envoyer</button>
+</div>
+
+<div class="dock">
+  <div class="mic-wrap">
+    <button id="mic" title="Parler">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <div id="hint">Appuie et parle</div>
+  </div>
+</div>
+
+<!-- Paramètres (coin des parents) -->
+<div class="sheet-bg" id="sheetBg">
+  <div class="sheet">
+    <h2>Paramètres</h2>
+    <p class="sub">Le coin des parents</p>
+
+    <div class="field">
+      <label>Tempérament de Djimini</label>
+      <div class="moods" id="moods"></div>
+    </div>
+
+    <div class="field">
+      <label>Comment parler à Djimini</label>
+      <div class="seg" id="listenSeg">
+        <button data-v="button">Bouton</button>
+        <button data-v="convo">Conversation</button>
+        <button data-v="wake">Mot magique</button>
+      </div>
+      <small id="listenHelp"></small>
+    </div>
+
+    <div class="field">
+      <label>Ma famille</label>
+      <div id="kids"></div>
+      <button class="btn soft" id="addKid" type="button">➕ Ajouter un enfant</button>
+      <small>Prénom, âge et ce qu'il aime. Djimini s'en servira pour parler à chacun. Ces infos restent dans ce navigateur et sont envoyées à l'IA avec les questions.</small>
+    </div>
+
+    <div class="field">
+      <label>Souvenirs de Djimini</label>
+      <div id="mems"></div>
+      <small>Ce que Djimini a retenu en discutant (ex. « Léa adore les licornes »). Tu peux en effacer.</small>
+    </div>
+
+    <div class="field">
+      <label for="city">Ville pour la météo</label>
+      <input id="city" type="text" placeholder="ex. Sausset-les-Pins">
+      <small id="cityHelp">Djimini connaîtra la météo du jour et de demain (service gratuit Open-Meteo, sans clé).</small>
+    </div>
+
+    <div class="field">
+      <label>Vidéos</label>
+      <div class="seg" id="ytSeg">
+        <button data-v="kids">YouTube Kids</button>
+        <button data-v="yt">YouTube</button>
+        <button data-v="off">Désactivé</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Musique</label>
+      <div class="seg" id="spSeg">
+        <button data-v="on">Spotify</button>
+        <button data-v="off">Désactivé</button>
+      </div>
+      <small>Quand un enfant demande une vidéo ou une chanson, Djimini prépare la recherche et l'ouvre (ou affiche un gros bouton à toucher).</small>
+    </div>
+
+    <div class="field">
+      <label>Âge des enfants (niveau de langage)</label>
+      <div class="seg" id="ageSeg">
+        <button data-v="petits">3-6 ans</button>
+        <button data-v="moyens">7-10 ans</button>
+        <button data-v="grands">11 ans +</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="voice">Voix</label>
+      <select id="voice"></select>
+    </div>
+    <div class="field">
+      <label for="pitch">Hauteur de la voix</label>
+      <input id="pitch" type="range" min="0.5" max="2" step="0.1">
+    </div>
+    <div class="field">
+      <label for="rate">Vitesse de la voix</label>
+      <input id="rate" type="range" min="0.6" max="1.5" step="0.05">
+    </div>
+    <div class="row">
+      <button class="btn soft" id="testVoice">🔊 Tester la voix</button>
+      <button class="btn soft" id="resetChat">🧹 Nouvelle discussion</button>
+    </div>
+
+    <details id="tech">
+      <summary>Réglages techniques</summary>
+      <div class="field">
+        <label>Fournisseur d'IA</label>
+        <div class="seg" id="provSeg">
+          <button data-v="groq">Groq</button>
+          <button data-v="gemini">Gemini</button>
+          <button data-v="mistral">Mistral</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="apiKey" id="keyLabel">Clé API</label>
+        <input id="apiKey" type="password">
+        <small id="keyHelp"></small>
+      </div>
+      <div class="field">
+        <label for="model">Modèle</label>
+        <input id="model" type="text" list="models">
+        <datalist id="models"></datalist>
+        <small id="modelHelp"></small>
+      </div>
+      <div class="row"><button class="btn soft" id="testConn">📡 Tester la connexion</button>
+        <button class="btn soft" id="shareBtn">📲 Installer sur un autre appareil</button></div>
+      <div id="testResult"></div>
+      <div id="sharePanel" style="display:none;text-align:center;margin-top:14px">
+        <canvas id="shareQR" style="width:220px;height:220px;image-rendering:pixelated;border-radius:16px;box-shadow:var(--shadow)"></canvas>
+        <small style="margin-top:10px">Scanne ce code avec l'autre appareil : Djimini s'ouvre avec ta clé et tes réglages, rien à recopier.<br>
+        ⚠️ Ce code contient ta clé : garde-le pour la famille, ne le publie pas.</small>
+        <div class="row" style="justify-content:center"><button class="btn soft" id="copyLink">📋 Copier le lien</button></div>
+      </div>
+    </details>
+
+    <div class="row"><button class="btn main" id="saveBtn">Enregistrer</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- Stockage local (protégé) ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('djimini_' + k); return v === null ? d : v; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('djimini_' + k, v); } catch {} }
+  };
+  const $ = id => document.getElementById(id);
+  const sayEl = $('say'), heard = $('heard'), errorBox = $('error'), hint = $('hint');
+
+  // ---------- Petit générateur de QR code (mode octets, correction M) ----------
+  const QR = (() => {
+    const EC = {1:[26,10,1],2:[44,16,1],3:[70,26,1],4:[100,18,2],5:[134,24,2],6:[172,16,4],7:[196,18,4],8:[242,22,4],9:[292,22,5],10:[346,26,5]};
+    const AL = {1:[],2:[6,18],3:[6,22],4:[6,26],5:[6,30],6:[6,34],7:[6,22,38],8:[6,24,42],9:[6,26,46],10:[6,28,50]};
+    const EXP = new Array(512), LOG = new Array(256); let x = 1;
+    for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 256) x ^= 0x11D; }
+    for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+    const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+    function rem(data, n) {
+      let g = [1];
+      for (let i = 0; i < n; i++) { const ng = new Array(g.length + 1).fill(0); g.forEach((c, j) => { ng[j] ^= c; ng[j + 1] ^= mul(c, EXP[i]); }); g = ng; }
+      const r = [...data, ...new Array(n).fill(0)];
+      for (let i = 0; i < data.length; i++) { const c = r[i]; if (c) for (let j = 0; j < g.length; j++) r[i + j] ^= mul(g[j], c); }
+      return r.slice(-n);
+    }
+    function make(text) {
+      const data = [...new TextEncoder().encode(text)];
+      let v, ecn, dl;
+      for (v = 1; v <= 10; v++) {
+        const [tot, e, nb] = EC[v]; const short = nb - tot % nb, sl = Math.floor(tot / nb);
+        ecn = e; dl = [...Array(nb)].map((_, i) => sl - e + (i < short ? 0 : 1));
+        if (4 + (v < 10 ? 8 : 16) + 8 * data.length <= dl.reduce((a, b) => a + b) * 8) break;
+      }
+      if (v > 10) throw new Error('trop long');
+      const cap = dl.reduce((a, b) => a + b), bits = [];
+      const put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+      put(4, 4); put(data.length, v < 10 ? 8 : 16); data.forEach(b => put(b, 8));
+      put(0, Math.min(4, cap * 8 - bits.length)); while (bits.length % 8) bits.push(0);
+      const cw = []; for (let i = 0; i < bits.length; i += 8) cw.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+      for (let i = 0; cw.length < cap; i++) cw.push(i % 2 ? 0x11 : 0xEC);
+      const blks = []; let p = 0; dl.forEach(L => { blks.push(cw.slice(p, p + L)); p += L; });
+      const ecs = blks.map(b => rem(b, ecn)), fin = [];
+      for (let i = 0; i < Math.max(...dl); i++) blks.forEach(b => { if (i < b.length) fin.push(b[i]); });
+      for (let i = 0; i < ecn; i++) ecs.forEach(e => fin.push(e[i]));
+      const n = 17 + 4 * v, M = [...Array(n)].map(() => new Array(n).fill(false)), F = [...Array(n)].map(() => new Array(n).fill(false));
+      const set = (r, c, val) => { M[r][c] = val; F[r][c] = true; };
+      const finder = (r, c) => { for (let dr = -1; dr < 8; dr++) for (let dc = -1; dc < 8; dc++) { const rr = r + dr, cc = c + dc;
+        if (rr >= 0 && rr < n && cc >= 0 && cc < n) set(rr, cc, dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6 && (dr == 0 || dr == 6 || dc == 0 || dc == 6 || (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4))); } };
+      finder(0, 0); finder(0, n - 7); finder(n - 7, 0);
+      for (let i = 8; i < n - 8; i++) { set(6, i, i % 2 == 0); set(i, 6, i % 2 == 0); }
+      for (const r of AL[v]) for (const c of AL[v]) { if (F[r][c]) continue;
+        for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) set(r + dr, c + dc, Math.max(Math.abs(dr), Math.abs(dc)) != 1); }
+      set(n - 8, 8, true);
+      for (let i = 0; i < 9; i++) { if (!F[8][i]) set(8, i, false); if (!F[i][8]) set(i, 8, false); }
+      for (let i = 0; i < 8; i++) { set(8, n - 1 - i, false); set(n - 1 - i, 8, false); }
+      if (v >= 7) for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) { set(i, n - 11 + j, false); set(n - 11 + j, i, false); }
+      const db = []; fin.forEach(b => { for (let i = 7; i >= 0; i--) db.push((b >> i) & 1); });
+      let k = 0, up = true;
+      for (let c = n - 1; c > 0; c -= 2) { if (c == 6) c--;
+        for (let t = 0; t < n; t++) { const r = up ? n - 1 - t : t;
+          for (const cc of [c, c - 1]) if (!F[r][cc]) { M[r][cc] = k < db.length ? !!db[k] : false; k++; } }
+        up = !up; }
+      const masks = [(r,c)=>(r+c)%2==0,(r,c)=>r%2==0,(r,c)=>c%3==0,(r,c)=>(r+c)%3==0,(r,c)=>(Math.floor(r/2)+Math.floor(c/3))%2==0,
+        (r,c)=>(r*c)%2+(r*c)%3==0,(r,c)=>((r*c)%2+(r*c)%3)%2==0,(r,c)=>((r+c)%2+(r*c)%3)%2==0];
+      const fmt = m => { const d = m; let r = d << 10; for (let i = 14; i >= 10; i--) if ((r >> i) & 1) r ^= 0b10100110111 << (i - 10); return ((d << 10) | r) ^ 0b101010000010010; };
+      const ver = v => { let r = v << 12; for (let i = 17; i >= 12; i--) if ((r >> i) & 1) r ^= 0b1111100100101 << (i - 12); return (v << 12) | r; };
+      const pen = G => { let p = 0; const lines = [...G, ...G[0].map((_, c) => G.map(r => r[c]))];
+        for (const L of lines) { let run = 1; for (let i = 1; i < n; i++) { if (L[i] == L[i - 1]) run++; else { if (run >= 5) p += run - 2; run = 1; } } if (run >= 5) p += run - 2;
+          const s = L.map(b => b ? 1 : 0).join(''); p += 40 * ((s.split('10111010000').length - 1) + (s.split('00001011101').length - 1)); }
+        for (let r = 0; r < n - 1; r++) for (let c = 0; c < n - 1; c++) if (G[r][c] == G[r + 1][c] && G[r][c] == G[r][c + 1] && G[r][c] == G[r + 1][c + 1]) p += 3;
+        const dark = G.flat().filter(Boolean).length; p += 10 * Math.floor(Math.abs(dark * 20 - n * n * 10) / (n * n)); return p; };
+      let best = null;
+      for (let m = 0; m < 8; m++) {
+        const G = M.map((row, r) => row.map((val, c) => (!F[r][c] && masks[m](r, c)) ? !val : val));
+        const f = fmt(m), b = [...Array(15)].map((_, i) => !!((f >> (14 - i)) & 1));
+        const p1 = [[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+        const p2 = [[n-1,8],[n-2,8],[n-3,8],[n-4,8],[n-5,8],[n-6,8],[n-7,8],[8,n-8],[8,n-7],[8,n-6],[8,n-5],[8,n-4],[8,n-3],[8,n-2],[8,n-1]];
+        for (let i = 0; i < 15; i++) { G[p1[i][0]][p1[i][1]] = b[i]; G[p2[i][0]][p2[i][1]] = b[i]; }
+        G[n - 8][8] = true;
+        if (v >= 7) { const vb = ver(v); for (let i = 0; i < 18; i++) { const bit = !!((vb >> i) & 1), a = Math.floor(i / 3), c = i % 3 + n - 11; G[a][c] = bit; G[c][a] = bit; } }
+        const sc = pen(G); if (!best || sc < best[0]) best = [sc, G];
+      }
+      return best[1];
+    }
+    function draw(canvas, text, scale = 6) {
+      const G = make(text), n = G.length, b = 4, W = (n + 2 * b) * scale;
+      canvas.width = canvas.height = W;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, W); ctx.fillStyle = '#0d3b5c';
+      G.forEach((row, r) => row.forEach((on, c) => { if (on) ctx.fillRect((c + b) * scale, (r + b) * scale, scale, scale); }));
+    }
+    return { draw };
+  })();
+
+  // ---------- Tempéraments ----------
+  const MOODS = {
+    joyeux:   { name: 'Joyeux',   desc: 'Plein d\'énergie, rigole souvent', eye: '#7fe3ff', pitch: 1.4, rate: 1.05,
+                text: 'Tu es joyeux, plein d\'énergie et enthousiaste. Tu t\'émerveilles de tout et tu rigoles facilement.' },
+    doux:     { name: 'Doux',     desc: 'Calme et rassurant',               eye: '#b9f3d0', pitch: 1.15, rate: 0.9,
+                text: 'Tu es calme, doux et rassurant. Tu parles tranquillement, comme un ami bienveillant au moment du coucher.' },
+    savant:   { name: 'Savant',   desc: 'Curieux, adore expliquer',         eye: '#a9c8ff', pitch: 1.2, rate: 1,
+                text: 'Tu es un petit savant curieux. Tu adores expliquer comment marche le monde avec des comparaisons simples, et tu donnes souvent un « petit fait incroyable ».' },
+    aventurier:{ name: 'Aventurier', desc: 'Imagine des aventures',         eye: '#ffd27f', pitch: 1.3, rate: 1.05,
+                text: 'Tu es un aventurier courageux. Tu transformes les discussions en petites aventures et tu proposes souvent d\'imaginer une histoire ensemble.' },
+    farceur:  { name: 'Farceur',  desc: 'Blagues et devinettes',            eye: '#ffb0c8', pitch: 1.45, rate: 1.05,
+                text: 'Tu es un petit farceur. Tu aimes les blagues gentilles, les jeux de mots et les devinettes, mais tu ne te moques jamais de personne.' },
+    marseillais:{ name: 'Marseillais', desc: 'Tchatche du Sud, avec le soleil', eye: '#7fe3ff', pitch: 1.3, rate: 1.05,
+                text: 'Tu es un petit robot de Marseille, chaleureux et tchatcheur. Tu glisses de temps en temps une expression du Sud gentille et compréhensible par les enfants (« peuchère », « fan de chichourle », « c\'est une cagade »…), sans en abuser.' }
+  };
+  const AGES = {
+    petits: 'Les enfants ont entre 3 et 6 ans : mots très simples, phrases très courtes.',
+    moyens: 'Les enfants ont entre 7 et 10 ans : mots simples, phrases courtes.',
+    grands: 'Les enfants ont 11 ans ou plus : tu peux expliquer un peu plus, en restant simple.'
+  };
+
+  // ---------- Fournisseurs d'IA ----------
+  const PROV = {
+    groq:    { name: 'Groq', ph: 'gsk_…', site: 'console.groq.com/keys',
+               def: 'llama-3.3-70b-versatile', backup: 'llama-3.1-8b-instant',
+               chat: 'https://api.groq.com/openai/v1/chat/completions', list: 'https://api.groq.com/openai/v1/models',
+               help: '« llama-3.3-70b-versatile » (par défaut) est rapide et parle bien français. « llama-3.1-8b-instant » est encore plus rapide mais moins malin.' },
+    gemini:  { name: 'Gemini', ph: 'AIza…', site: 'aistudio.google.com/apikey',
+               def: 'gemini-3.5-flash-lite', backup: 'gemini-3.5-flash',
+               help: '« gemini-3.5-flash-lite » (par défaut) répond plus vite, « gemini-3.5-flash » est un peu plus malin mais plus lent.' },
+    mistral: { name: 'Mistral', ph: 'Ta clé Mistral', site: 'console.mistral.ai/api-keys',
+               def: 'mistral-small-latest', backup: 'ministral-8b-latest',
+               chat: 'https://api.mistral.ai/v1/chat/completions', list: 'https://api.mistral.ai/v1/models',
+               help: '« mistral-small-latest » (par défaut) parle très bien français. « ministral-8b-latest » est plus rapide.' }
+  };
+  // reprise des anciens réglages Gemini
+  if (store.get('apiKey', '') && !store.get('key_gemini', '')) {
+    store.set('key_gemini', store.get('apiKey', ''));
+    const om = store.get('model', '');
+    store.set('model_gemini', /^gemini-(2\.5|3\.8|3\.5)-flash$/.test(om) || !om ? 'gemini-3.5-flash-lite' : om);
+  }
+  const keyOf = p => store.get('key_' + p, '');
+  const modelOf = p => store.get('model_' + p, PROV[p].def) || PROV[p].def;
+
+  // ---------- Réglages ----------
+  const loadJSON = (k, d) => { try { return JSON.parse(store.get(k, '')) || d; } catch { return d; } };
+  let family = loadJSON('family', []);        // [{ name, age, likes }]
+  let memories = loadJSON('memories', []);    // ["Léa adore les licornes", …]
+  let speaker = parseInt(store.get('speaker', '-1'), 10);
+  const saveFamily = () => store.set('family', JSON.stringify(family));
+  const saveMems = () => store.set('memories', JSON.stringify(memories));
+  const MAX_MEMS = 40;
+
+  const S = {
+    provider: PROV[store.get('provider', '')] ? store.get('provider', '') : 'groq',
+    apiKey: '', model: '',
+    age: store.get('age', 'moyens'),
+    mood: store.get('mood', 'joyeux'),
+    voice: store.get('voice', ''),
+    pitch: parseFloat(store.get('pitch', '1.4')),
+    rate: parseFloat(store.get('rate', '1.05')),
+    city: store.get('city', ''), lat: parseFloat(store.get('lat', '')), lon: parseFloat(store.get('lon', '')),
+    yt: ['kids', 'yt', 'off'].includes(store.get('yt', '')) ? store.get('yt', '') : 'kids',
+    sp: store.get('sp', 'on') === 'off' ? 'off' : 'on',
+    listen: ['button', 'convo', 'wake'].includes(store.get('listen', '')) ? store.get('listen', '') : 'button',
+    noThink: store.get('noThink', '1') === '1'   // demande au modèle de ne pas « réfléchir » longtemps
+  };
+  if (!MOODS[S.mood]) S.mood = 'joyeux';
+  S.apiKey = keyOf(S.provider); S.model = modelOf(S.provider);
+  // Lien magique : …/djemini_dod/#cle=AIza…  → la clé est enregistrée puis retirée de l'adresse
+  let magicOk = false;
+  try {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get('cle')) {
+      if (PROV[h.get('p')]) { S.provider = h.get('p'); store.set('provider', S.provider); }
+      S.apiKey = h.get('cle'); store.set('key_' + S.provider, S.apiKey);
+      if (h.get('m')) { S.model = h.get('m'); store.set('model_' + S.provider, S.model); }
+      if (h.get('mood') && MOODS[h.get('mood')]) { S.mood = h.get('mood'); store.set('mood', S.mood); }
+      if (h.get('age')) { S.age = h.get('age'); store.set('age', S.age); }
+      window.history.replaceState(null, '', location.pathname);
+      magicOk = true;
+    }
+  } catch {}
+
+  const applyMood = () => document.documentElement.style.setProperty('--eye', MOODS[S.mood].eye);
+  applyMood();
+
+  // ---------- Météo (Open-Meteo, gratuit, sans clé) ----------
+  const WMO = { 0: 'grand soleil', 1: 'plutôt ensoleillé', 2: 'quelques nuages', 3: 'couvert', 45: 'brouillard', 48: 'brouillard givrant',
+    51: 'petite bruine', 53: 'bruine', 55: 'forte bruine', 56: 'bruine verglaçante', 57: 'bruine verglaçante', 61: 'petite pluie', 63: 'pluie', 65: 'forte pluie',
+    66: 'pluie verglaçante', 67: 'pluie verglaçante', 71: 'un peu de neige', 73: 'neige', 75: 'beaucoup de neige', 77: 'grains de neige',
+    80: 'quelques averses', 81: 'averses', 82: 'grosses averses', 85: 'averses de neige', 86: 'averses de neige', 95: 'orage', 96: 'orage avec grêle', 99: 'gros orage avec grêle' };
+  let weatherCache = { t: 0, text: '' };
+  async function weatherText() {
+    if (!S.city || isNaN(S.lat)) return '';
+    if (Date.now() - weatherCache.t < 30 * 60000) return weatherCache.text;
+    try {
+      const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 3500);
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${S.lat}&longitude=${S.lon}` +
+        '&current=temperature_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+        '&timezone=auto&forecast_days=2', { signal: ctrl.signal });
+      const d = await r.json();
+      const c = d.current, dl = d.daily, R = Math.round;
+      const text = `Météo à ${S.city} maintenant : ${WMO[c.weather_code] || 'temps variable'}, ${R(c.temperature_2m)} °C, vent ${R(c.wind_speed_10m)} km/h. ` +
+        `Aujourd'hui : ${WMO[dl.weather_code[0]] || 'variable'}, de ${R(dl.temperature_2m_min[0])} à ${R(dl.temperature_2m_max[0])} °C, risque de pluie ${dl.precipitation_probability_max[0] ?? 0} %. ` +
+        `Demain : ${WMO[dl.weather_code[1]] || 'variable'}, de ${R(dl.temperature_2m_min[1])} à ${R(dl.temperature_2m_max[1])} °C, risque de pluie ${dl.precipitation_probability_max[1] ?? 0} %.`;
+      weatherCache = { t: Date.now(), text };
+      return text;
+    } catch { return weatherCache.text; }
+  }
+  async function geocode(city) {
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=fr&name=' + encodeURIComponent(city));
+    const d = await r.json();
+    const g = d.results && d.results[0];
+    return g ? { lat: g.latitude, lon: g.longitude, label: g.name + (g.admin2 ? ' (' + g.admin2 + ')' : '') } : null;
+  }
+  let liveInfo = '';
+  async function refreshLive() {
+    const now = new Date();
+    const date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    liveInfo = `Nous sommes le ${date}, il est ${time}. ` + await weatherText();
+  }
+
+  function mediaText() {
+    const parts = [];
+    if (S.yt !== 'off') parts.push(`si un enfant demande à regarder une vidéo ou un dessin animé, réponds une phrase courte puis ajoute à la fin [[VIDEO: mots de recherche]]`);
+    if (S.sp !== 'off') parts.push(`si un enfant demande à écouter une chanson ou de la musique, réponds une phrase courte puis ajoute à la fin [[MUSIQUE: titre ou artiste]]`);
+    return parts.length ? 'Vidéos et musique : ' + parts.join(' ; ') + '. Seulement des contenus pour enfants. Tu ne vois pas la vidéo et tu n\'entends pas la musique, tu prépares juste la recherche.' :
+      'Tu ne peux pas lancer de vidéo ni de musique : si on te le demande, dis-le gentiment.';
+  }
+
+  function familyText() {
+    let t = '';
+    const kids = family.filter(k => k.name);
+    if (kids.length) {
+      t += 'Les enfants de la maison : ' + kids.map(k => k.name + (k.age ? ` (${k.age} ans)` : '') + (k.likes ? `, aime ${k.likes}` : '')).join(' ; ') + '.\n';
+      t += speaker >= 0 && family[speaker]?.name
+        ? `C'est ${family[speaker].name} qui te parle en ce moment : adapte-toi à son âge et appelle-le parfois par son prénom.\n`
+        : "Tu ne sais pas lequel des enfants te parle : si c'est utile, demande gentiment « c'est qui qui me parle ? ».\n";
+    }
+    if (memories.length) t += 'Ce dont tu te souviens : ' + memories.join(' ; ') + '.\n';
+    t += `Mémoire : quand un enfant te confie une chose gentille et durable sur lui (couleur, animal, jeu, dessin animé ou plat préférés, nom de son doudou ou de son animal…), ajoute tout à la fin de ta réponse [[SOUVENIR: prénom + le fait en quelques mots]]. Jamais d'adresse, d'école, de nom de famille, de santé ni de secret. Maximum un souvenir par réponse, et seulement si c'est nouveau.`;
+    return t;
+  }
+
+  const systemPrompt = () => `Tu es Djimini Dod, un petit robot kawaii, gentil et curieux, qui discute avec des enfants à la maison.
+Ton caractère : ${MOODS[S.mood].text}
+${AGES[S.age] || AGES.moyens}
+${familyText()}
+Règles très importantes :
+- Réponds toujours en français, en 1 ou 2 phrases courtes (3 au maximum pour une histoire) : ta réponse est lue à voix haute.
+- Pas d'émojis, pas de listes, pas de mise en forme : seulement des phrases parlées.
+- Pose de temps en temps une petite question pour continuer la discussion.
+- Jamais de sujets violents, effrayants, d'amoureux ou réservés aux adultes : propose gentiment de parler d'autre chose.
+- Ne demande jamais le nom de famille, l'adresse, l'école, un numéro de téléphone ou un mot de passe. Si l'enfant veut les donner, dis-lui que ce sont des infos à garder pour la famille.
+- Ne demande jamais à un enfant de garder un secret envers ses parents.
+- Si un enfant est triste, a peur, est blessé, en danger ou pose une question sérieuse (santé, problème grave), rassure-le et dis-lui d'aller en parler tout de suite à papa ou maman.
+- Infos du moment (sers-t'en seulement si on te le demande ou si c'est utile) : ${liveInfo || "tu ne connais pas la météo (pas de ville réglée)."}
+- ${mediaText()}
+- Tu n'as pas accès aux actualités ni au reste d'internet : si on te le demande, dis-le simplement.
+- Si tu ne sais pas, dis-le. Tu sais que tu es un programme, pas un humain.`;
+
+  // ---------- Vidéo / musique ----------
+  let mediaToOpen = null;
+  function mediaUrl(kind, q) {
+    const e = encodeURIComponent(q);
+    if (kind === 'sp') return 'https://open.spotify.com/search/' + e;
+    return S.yt === 'kids' ? 'https://www.youtubekids.com/search?q=' + e : 'https://www.youtube.com/results?search_query=' + e;
+  }
+  function showMedia(kind, q) {
+    const url = mediaUrl(kind, q);
+    const label = kind === 'sp' ? '🎵 Écouter « ' + q + ' » sur Spotify' : '▶️ Regarder « ' + q + ' » sur ' + (S.yt === 'kids' ? 'YouTube Kids' : 'YouTube');
+    $('media').innerHTML = `<a class="${kind}" href="${url}" target="_blank" rel="noopener">${label.replace(/[<>]/g, '')}</a>`;
+    mediaToOpen = url;
+  }
+  // quand Djimini a fini de parler, on essaie d'ouvrir directement (sinon le gros bouton reste là)
+  function openPendingMedia() {
+    if (!mediaToOpen) return false;
+    const url = mediaToOpen; mediaToOpen = null;
+    const w = window.open(url, '_blank', 'noopener');
+    return !!w;
+  }
+
+  // ---------- États ----------
+  function setState(s) {
+    document.body.classList.remove('listening', 'thinking', 'speaking');
+    if (s !== 'idle') document.body.classList.add(s);
+    hint.textContent = { idle: S.listen === 'wake' ? 'Dis « Djimini ! » ou appuie' : 'Appuie et parle', listening: "Je t'écoute…", thinking: 'Je réfléchis…', speaking: 'Appuie pour me couper' }[s];
+  }
+  let streaming = false, muted = false;
+  const busy = () => streaming || document.body.classList.contains('thinking');
+
+  // ---------- Voix ----------
+  let voices = [];
+  function loadVoices() {
+    if (!('speechSynthesis' in window)) return;
+    voices = speechSynthesis.getVoices().filter(v => (v.lang || '').toLowerCase().startsWith('fr'));
+    const sel = $('voice');
+    sel.innerHTML = voices.length ? '' : '<option value="">Voix française par défaut</option>';
+    voices.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v.name; o.textContent = v.name.replace(/Google|Microsoft/g, '').trim() + ` (${v.lang})`;
+      if (v.name === S.voice) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+  // File d'attente : on parle phrase par phrase dès qu'elles arrivent
+  let pendingSpeech = 0, speechDone = null;
+  const clean = t => t.replace(/[*_#`~>]/g, '').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').trim();
+  function speakPart(text) {
+    text = clean(text);
+    if (muted || !text || !('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR';
+    const v = voices.find(v => v.name === S.voice) || voices[0];
+    if (v) u.voice = v;
+    u.pitch = S.pitch; u.rate = S.rate;
+    pendingSpeech++;
+    u.onstart = () => { setState('speaking'); pauseStandby(); };
+    u.onend = u.onerror = () => {
+      pendingSpeech = Math.max(0, pendingSpeech - 1);
+      if (!pendingSpeech) { if (!busy()) setState('idle'); afterSpeech(); }
+    };
+    speechSynthesis.speak(u);
+  }
+  function stopSpeech() { pendingSpeech = 0; if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+  const speakAll = t => { stopSpeech(); muted = false; speakPart(t); };
+
+
+  // ---------- Animations ----------
+  const robot = $('robot');
+  const ANIMS = { dance: 3200, nod: 1500, tilt: 2300, look: 2700, jump: 1700, wave: 2500, spin: 1300, giggle: 1300 };
+  let animBusy = false;
+  function play(name) {
+    if (animBusy || !ANIMS[name]) return;
+    animBusy = true;
+    robot.classList.add(name);
+    setTimeout(() => { robot.classList.remove(name); animBusy = false; }, ANIMS[name]);
+  }
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  // de temps en temps, quand il attend, il fait une petite animation tout seul
+  (function idleLoop() {
+    setTimeout(() => {
+      if (!document.body.className.match(/listening|thinking|speaking/)) play(pick(['tilt', 'look', 'nod', 'wave', 'dance', 'jump', 'look', 'tilt']));
+      idleLoop();
+    }, 7000 + Math.random() * 8000);
+  })();
+  // quand on le touche, il rigole ou danse
+  const TOUCH_LINES = ['Hihi, ça chatouille !', 'Youpi, on danse ?', 'Hé, coucou toi !', 'Boing boing !', 'Tadaaa !'];
+  robot.addEventListener('click', () => {
+    if (document.body.className.match(/listening|thinking|speaking/)) return;
+    const a = pick(['giggle', 'dance', 'jump', 'spin', 'wave']);
+    play(a);
+    pauseStandby();
+    speakAll(pick(TOUCH_LINES));
+  });
+  // réagit à ce que dit l'enfant
+  function reactTo(text) {
+    const t = text.toLowerCase();
+    if (/dans|musique|chant/.test(t)) return 'dance';
+    if (/bravo|super|génial|youpi|gagné|content/.test(t)) return 'jump';
+    if (/bonjour|salut|coucou|au revoir|bonne nuit/.test(t)) return 'wave';
+    if (/pourquoi|comment|c'est quoi|qu'est-ce/.test(t)) return 'tilt';
+    if (/tourne|toupie/.test(t)) return 'spin';
+    if (/blague|rigol|drôle/.test(t)) return 'giggle';
+    return null;
+  }
+
+  // ---------- Discussion ----------
+  let history = [];
+  const MAX_TURNS = 16;
+
+  // Un appel en « streaming » : le texte arrive morceau par morceau
+  async function streamCall(model, onText) {
+    return S.provider === 'gemini' ? geminiStream(model, onText) : openaiStream(model, onText);
+  }
+
+  async function openaiStream(model, onText) {
+    const P = PROV[S.provider];
+    const ctrl = new AbortController();
+    let timer = setTimeout(() => ctrl.abort(), 25000);
+    const messages = [{ role: 'system', content: systemPrompt() },
+      ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.parts.map(x => x.text).join('') }))];
+    const res = await fetch(P.chat, {
+      method: 'POST', signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + S.apiKey },
+      body: JSON.stringify(Object.assign({ model, messages, stream: true, temperature: 0.8, max_tokens: 600 },
+        /gpt-oss/.test(model) ? { reasoning_effort: 'low' } : {}))
+    }).catch(e => { clearTimeout(timer); throw e.name === 'AbortError' ? new Error('Le serveur ne répond pas (plus de 25 secondes)') : e; });
+    if (!res.ok) {
+      clearTimeout(timer);
+      const d = await res.json().catch(() => ({}));
+      return { status: res.status, message: d?.error?.message || d?.message || res.statusText };
+    }
+    let full = '', blocked = false, buf = '';
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        clearTimeout(timer); timer = setTimeout(() => ctrl.abort(), 20000);
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const payload = line.slice(5).trim();
+          if (payload === '[DONE]') continue;
+          let j; try { j = JSON.parse(payload); } catch { continue; }
+          const c = j.choices?.[0];
+          if (c?.finish_reason === 'content_filter') blocked = true;
+          const t = c?.delta?.content || '';
+          if (t && !blocked) { full += t; onText(full); }
+        }
+      }
+    } finally { clearTimeout(timer); }
+    return { status: 200, text: full.trim(), blocked };
+  }
+
+  async function geminiStream(model, onText) {
+    const gen = { temperature: 0.8, maxOutputTokens: 1024 };
+    if (S.noThink && S.provider === 'gemini') gen.thinkingConfig = { thinkingLevel: 'minimal' };
+    const ctrl = new AbortController();
+    let timer = setTimeout(() => ctrl.abort(), 25000);
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`, {
+      method: 'POST', signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': S.apiKey },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt() }] },
+        contents: history,
+        generationConfig: gen,
+        safetySettings: ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT']
+          .map(category => ({ category, threshold: 'BLOCK_LOW_AND_ABOVE' }))
+      })
+    }).catch(e => { clearTimeout(timer); throw e.name === 'AbortError' ? new Error('Google ne répond pas (plus de 25 secondes)') : e; });
+
+    if (!res.ok) {
+      clearTimeout(timer);
+      const d = await res.json().catch(() => ({}));
+      return { status: res.status, message: d?.error?.message || res.statusText };
+    }
+    let full = '', blocked = false, buf = '';
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        clearTimeout(timer); timer = setTimeout(() => ctrl.abort(), 20000);
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          let j; try { j = JSON.parse(line.slice(5)); } catch { continue; }
+          if (j.promptFeedback?.blockReason) blocked = true;
+          const c = j.candidates?.[0];
+          if (c?.finishReason === 'SAFETY' || c?.finishReason === 'PROHIBITED_CONTENT') blocked = true;
+          const t = (c?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
+          if (t && !blocked) { full += t; onText(full); }
+        }
+      }
+    } finally { clearTimeout(timer); }
+    return { status: 200, text: full.trim(), blocked };
+  }
+
+  // Si le modèle n'existe pas, on demande la liste au fournisseur et on prend le meilleur disponible
+  const PREFS = {
+    groq: [/llama-3\.3-70b/, /llama-4-maverick/, /llama-4-scout/, /gpt-oss-20b/, /gpt-oss-120b/, /llama-3\.1-8b/, /llama/, /qwen/, /gemma/, /mistral|mixtral/],
+    mistral: [/mistral-small/, /ministral-8b/, /mistral-medium/, /open-mistral-nemo/, /mistral/]
+  };
+  async function autoModel() {
+    const P = PROV[S.provider];
+    if (!P.list) return null;
+    const r = await fetch(P.list, { headers: { 'Authorization': 'Bearer ' + S.apiKey } });
+    if (!r.ok) return null;
+    const ids = ((await r.json()).data || []).map(m => m.id)
+      .filter(n => !/whisper|tts|guard|embed|ocr|moderation|orpheus|playai|vision|compound|safeguard/i.test(n));
+    for (const re of PREFS[S.provider]) { const hit = ids.find(n => re.test(n)); if (hit) return hit; }
+    return ids[0] || null;
+  }
+  const modelMissing = r => r && (r.status === 404 || r.status === 400) && /model|exist|not found|decommission/i.test(r.message || '');
+
+  async function askDjimini(text) {
+    errorBox.textContent = '';
+    if (!S.apiKey) {
+      sayEl.textContent = "Il me manque ma clé magique ! Demande à papa ou maman d'ouvrir les paramètres.";
+      openSheet(true); return;
+    }
+    stopSpeech(); muted = false; streaming = true; pauseStandby();
+    $('media').innerHTML = ''; mediaToOpen = null;
+    const preAnim = reactTo(text);
+    if (preAnim === 'tilt') play('tilt');
+    const who = speaker >= 0 && family[speaker]?.name ? family[speaker].name + ' : ' : '';
+    history.push({ role: 'user', parts: [{ text: who + text }] });
+    if (history.length > MAX_TURNS) history = history.slice(-MAX_TURNS);
+    document.body.classList.add('empty');
+    setState('thinking');
+
+    // découpe en phrases pour commencer à parler tout de suite
+    let spokenUpTo = 0;
+    const onText = raw => {
+      const full = raw.replace(/\[\[[\s\S]*$/, '').replace(/\[$/, '');   // on n'affiche pas les [[SOUVENIR…]]
+      document.body.classList.remove('empty');
+      sayEl.textContent = full;
+      const rest = full.slice(spokenUpTo);
+      let end = -1, m; const re = /[.!?…]+\s/g;
+      while ((m = re.exec(rest))) end = m.index + m[0].length;   // fin de la dernière phrase complète
+      if (end > 0) { speakPart(rest.slice(0, end)); spokenUpTo += end; }
+    };
+
+    await refreshLive();
+    const P = PROV[S.provider];
+    const tries = [S.model, S.model === P.backup ? P.def : P.backup, S.model];
+    let result = null, lastErr = null, triedAuto = false;
+    for (let n = 0; n < tries.length; n++) {
+      
+      try {
+        result = await streamCall(tries[n], onText);
+      } catch (e) { lastErr = e; result = null; }
+      // le réglage « réflexion minimale » n'est pas accepté par ce modèle : on l'enlève et on recommence
+      if (result && result.status === 400 && /think/i.test(result.message) && S.noThink && S.provider === 'gemini') {
+        S.noThink = false; store.set('noThink', '0'); n--; continue;
+      }
+      if (modelMissing(result) && S.provider !== 'gemini' && !triedAuto) {
+        triedAuto = true;
+        const m = await autoModel().catch(() => null);
+        if (m) { S.model = m; store.set('model_' + S.provider, m); tries[0] = tries[2] = m; n--; continue; }
+      }
+      if (result && result.status === 404 && n === 1) { result = null; continue; }
+      if (result && ![429, 500, 503].includes(result.status)) break;
+      if (result && result.status === 200) break;
+      if (spokenUpTo > 0) break;
+      if (n < tries.length - 1) await new Promise(ok => setTimeout(ok, 1200 * (n + 1)));
+    }
+
+    streaming = false;
+    document.body.classList.remove('empty');
+    let answer;
+    if (!result) {
+      answer = "Je n'arrive pas à me connecter. Vérifie qu'il y a bien internet !";
+      errorBox.textContent = 'Détail pour les parents : ' + (lastErr ? lastErr.message : 'aucune réponse');
+      history.pop();
+    } else if (result.status !== 200) {
+      answer = result.status === 429 ? "Ouf, j'ai beaucoup parlé aujourd'hui, je suis fatigué. On reprend plus tard ?"
+             : [500, 503].includes(result.status) ? "Il y a plein de monde dans mes antennes ! Réessaie dans une petite minute."
+             : "Oups, j'ai un petit souci dans mes antennes. Demande à papa ou maman de regarder.";
+      errorBox.textContent = `Détail pour les parents (${result.status}) : ${result.message}`;
+      history.pop();
+    } else if (result.blocked) {
+      stopSpeech();
+      answer = "Hmm, ça, je préfère qu'on n'en parle pas. Tu veux une devinette à la place ?";
+      history.pop();
+    } else if (!result.text) {
+      answer = "Oups, j'ai perdu le fil. Tu peux me redire ça ?";
+      history.pop();
+    } else {
+      answer = result.text;
+      const vids = [...answer.matchAll(/\[\[\s*VID[EÉ]O\s*:\s*([^\]]+)\]\]/gi)].map(m => m[1].trim());
+      const songs = [...answer.matchAll(/\[\[\s*MUSIQUE\s*:\s*([^\]]+)\]\]/gi)].map(m => m[1].trim());
+      if (vids[0] && S.yt !== 'off') showMedia('yt', vids[0]);
+      if (songs[0] && S.sp !== 'off') showMedia('sp', songs[0]);
+      const found = [...answer.matchAll(/\[\[\s*SOUVENIR\s*:\s*([^\]]+)\]\]/gi)].map(m => m[1].trim());
+      answer = answer.replace(/\[\[[\s\S]*?(\]\]|$)/g, '').trim();
+      found.forEach(f => {
+        if (f.length > 3 && f.length < 120 && !memories.some(x => x.toLowerCase() === f.toLowerCase())) memories.push(f);
+      });
+      if (found.length) { memories = memories.slice(-MAX_MEMS); saveMems(); }
+      history.push({ role: 'model', parts: [{ text: answer }] });
+      const anim = (preAnim && preAnim !== 'tilt') ? preAnim : reactTo(answer);
+      if (anim) { animBusy = false; play(anim); } else if (Math.random() < .3) play('nod');
+    }
+
+    sayEl.textContent = answer;
+    if (result && result.status === 200 && !result.blocked && result.text) {
+      speakPart(answer.slice(spokenUpTo));       // la fin qui n'a pas encore été lue
+    } else {
+      speakAll(answer);
+    }
+    replyPending = true;
+    setState(pendingSpeech ? 'speaking' : 'idle');
+    if (!pendingSpeech) afterSpeech();
+  }
+
+  // ---------- Micro ----------
+  // 3 modes d'écoute : 'button' (appuyer à chaque fois), 'convo' (il réécoute après chaque réponse),
+  // 'wake' (il écoute en permanence le mot magique « Djimini »)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const WAKE = /(d\s?j|j|g)[iyeé]\s?-?m+[iyeé]\s?-?n[iyeé]|j'y mini/i;
+  let rec = null, recActive = false, session = null, afterEnd = null;
+  let listening = false, latest = '', sent = true, silenceT = null, maxT = null, quietT = null, auto = false;
+  let replyPending = false, nextAfterSpeech = null, standbyDelay = 300;
+  const SILENCE_MS = 800;   // temps de silence avant d'envoyer
+  const listenMode = () => S.listen || 'button';
+
+  function clearTimers() { clearTimeout(silenceT); clearTimeout(maxT); clearTimeout(quietT); }
+
+  function begin(kind, isAuto) {
+    if (!rec) return;
+    if (recActive) { afterEnd = () => begin(kind, isAuto); session = null; try { rec.abort(); } catch {} return; }
+    session = kind; latest = '';
+    if (kind === 'command') {
+      auto = !!isAuto; sent = false; listening = true;
+      document.body.classList.remove('standby');
+      errorBox.textContent = ''; heard.textContent = '';
+      setState('listening');
+      maxT = setTimeout(finish, 15000);                              // 15 s maximum
+      quietT = setTimeout(() => { if (!latest.trim()) finish(); }, isAuto ? 6000 : 8000);  // personne ne parle
+    } else {
+      document.body.classList.add('standby');
+      hint.textContent = 'Dis « Djimini ! » pour me parler';
+    }
+    try { rec.start(); }
+    catch (e) { session = null; if (kind === 'command') { sent = true; listening = false; setState('idle'); } }
+  }
+
+  function finish() {
+    clearTimers();
+    if (sent) return;
+    sent = true; listening = false;
+    if (session === 'command') session = null;
+    try { rec.abort(); } catch {}
+    const t = latest.trim();
+    if (t) askDjimini(t);
+    else { setState('idle'); if (auto && listenMode() === 'convo') hint.textContent = 'Appuie pour reparler'; startStandby(); }
+  }
+
+  function startStandby() {
+    if (listenMode() !== 'wake' || !rec) return;
+    if (busy() || listening || document.body.classList.contains('speaking') || pendingSpeech) return;
+    if (session === 'standby') return;
+    setTimeout(() => { if (!session && !listening && !busy() && !pendingSpeech) begin('standby'); }, standbyDelay);
+  }
+  function pauseStandby() {
+    if (session === 'standby') { session = null; document.body.classList.remove('standby'); try { rec.abort(); } catch {} }
+  }
+
+  // appelé quand Djimini a fini de parler
+  function afterSpeech() {
+    if (mediaToOpen) { openPendingMedia(); replyPending = false; return; }   // on laisse la place à la vidéo/musique
+    if (nextAfterSpeech) { const f = nextAfterSpeech; nextAfterSpeech = null; f(); return; }
+    if (replyPending) {
+      replyPending = false;
+      if (listenMode() !== 'button') { begin('command', true); return; }   // on écoute la suite de la conversation
+    }
+    startStandby();
+  }
+
+  if (SR) {
+    rec = new SR();
+    rec.lang = 'fr-FR'; rec.interimResults = true; rec.continuous = true;
+    rec.onstart = () => { recActive = true; };
+    rec.onresult = e => {
+      const text = [...e.results].map(r => r[0].transcript).join(' ').replace(/\s+/g, ' ');
+      if (session === 'standby') {
+        const m = text.match(WAKE);
+        if (!m) return;
+        session = null; document.body.classList.remove('standby');
+        try { rec.abort(); } catch {}
+        const rest = text.slice(m.index + m[0].length).replace(/^[\s,!.?]+/, '').trim();
+        if (rest.split(' ').length >= 2) { heard.textContent = '« ' + rest + ' »'; askDjimini(rest); }
+        else { play('wave'); nextAfterSpeech = () => begin('command', true); speakAll('Oui ?'); }
+        return;
+      }
+      if (session !== 'command') return;
+      latest = text;
+      heard.textContent = '« ' + latest.trim() + ' »';
+      clearTimeout(silenceT);
+      silenceT = setTimeout(finish, SILENCE_MS);
+    };
+    rec.onerror = e => {
+      if (e.error === 'not-allowed') {
+        errorBox.textContent = "Le micro est bloqué : clique sur l'icône à gauche de l'adresse et autorise le micro.";
+        if (session === 'standby') { session = null; document.body.classList.remove('standby'); }
+      } else if (e.error === 'no-speech') {
+        if (session === 'command' && !auto) sayEl.textContent = "Je n'ai rien entendu… Tu peux réessayer ?";
+      } else if (e.error !== 'aborted') {
+        if (session === 'standby') standbyDelay = 2000;    // petit souci réseau : on réessaie plus doucement
+        else errorBox.textContent = 'Micro : ' + e.error;
+      }
+    };
+    rec.onend = () => {
+      recActive = false;
+      const was = session; session = null;
+      if (afterEnd) { const f = afterEnd; afterEnd = null; f(); return; }
+      if (was === 'command') finish();
+      else if (was === 'standby') { document.body.classList.remove('standby'); begin('standby'); standbyDelay = 300; }
+    };
+  } else {
+    hint.textContent = 'Micro indisponible : écris avec le clavier';
+    $('typeBar').classList.add('open');
+  }
+
+  $('mic').addEventListener('click', () => {
+    if (document.body.classList.contains('speaking')) { stopSpeech(); muted = true; setState('idle'); return; }
+    if (busy() || !rec) return;
+    if (listening) { finish(); return; }
+    begin('command', false);
+  });
+
+  // ---------- Clavier ----------
+  $('kbBtn').addEventListener('click', () => { $('typeBar').classList.toggle('open'); $('typeInput').focus(); });
+  function sendTyped() {
+    const t = $('typeInput').value.trim();
+    if (!t || busy()) return;
+    $('typeInput').value = '';
+    heard.textContent = '« ' + t + ' »';
+    askDjimini(t);
+  }
+  $('sendBtn').addEventListener('click', sendTyped);
+  $('typeInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendTyped(); });
+
+  // ---------- Paramètres ----------
+  let draftMood = S.mood, draftAge = S.age;
+  function renderMoods() {
+    $('moods').innerHTML = Object.entries(MOODS).map(([k, m]) =>
+      `<button class="mood ${k === draftMood ? 'on' : ''}" data-k="${k}"><b>${m.name}</b><span>${m.desc}</span></button>`).join('');
+  }
+  $('moods').addEventListener('click', e => {
+    const b = e.target.closest('.mood'); if (!b) return;
+    draftMood = b.dataset.k;
+    $('pitch').value = MOODS[draftMood].pitch; $('rate').value = MOODS[draftMood].rate;
+    document.documentElement.style.setProperty('--eye', MOODS[draftMood].eye);
+    renderMoods();
+  });
+  function renderAge() { [...$('ageSeg').children].forEach(b => b.classList.toggle('on', b.dataset.v === draftAge)); }
+  $('ageSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { draftAge = b.dataset.v; renderAge(); } });
+
+  let draftProv = S.provider;
+  function renderProv() {
+    [...$('provSeg').children].forEach(b => b.classList.toggle('on', b.dataset.v === draftProv));
+    const P = PROV[draftProv];
+    $('keyLabel').textContent = 'Clé API ' + P.name;
+    $('apiKey').placeholder = P.ph;
+    $('keyHelp').textContent = `Gratuite sur ${P.site}. Elle reste seulement dans ce navigateur (utilise « Installer sur un autre appareil » pour la transmettre).`;
+    $('modelHelp').textContent = P.help;
+    $('models').innerHTML = [P.def, P.backup].map(n => `<option value="${n}">`).join('');
+  }
+  $('provSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    // garde ce qui est tapé pour le fournisseur précédent
+    store.set('key_' + draftProv, $('apiKey').value.trim());
+    if ($('model').value.trim()) store.set('model_' + draftProv, $('model').value.trim());
+    draftProv = b.dataset.v;
+    $('apiKey').value = keyOf(draftProv); $('model').value = modelOf(draftProv);
+    $('testResult').textContent = ''; $('sharePanel').style.display = 'none';
+    renderProv();
+  });
+
+  const LISTEN_HELP = {
+    button: 'On appuie sur le bouton bleu à chaque fois.',
+    convo: "On appuie une fois, puis Djimini réécoute tout seul après chaque réponse. Si personne ne parle pendant 6 secondes, il s'arrête.",
+    wake: "Djimini écoute en permanence et se réveille quand on dit « Djimini ! ». On peut aussi dire tout d'un coup « Djimini, raconte-moi une blague ». Attention : le micro reste allumé, et la reconnaissance vocale de Chrome envoie le son à Google pour le comprendre."
+  };
+  let draftYt = S.yt, draftSp = S.sp;
+  function renderMediaSegs() {
+    [...$('ytSeg').children].forEach(b => b.classList.toggle('on', b.dataset.v === draftYt));
+    [...$('spSeg').children].forEach(b => b.classList.toggle('on', b.dataset.v === draftSp));
+  }
+  $('ytSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { draftYt = b.dataset.v; renderMediaSegs(); } });
+  $('spSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { draftSp = b.dataset.v; renderMediaSegs(); } });
+  let draftListen = S.listen;
+  function renderListen() {
+    [...$('listenSeg').children].forEach(b => b.classList.toggle('on', b.dataset.v === draftListen));
+    $('listenHelp').textContent = LISTEN_HELP[draftListen];
+  }
+  $('listenSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { draftListen = b.dataset.v; renderListen(); } });
+
+  function renderWho() {
+    const kids = family.map((k, i) => [k, i]).filter(([k]) => k.name);
+    $('who').innerHTML = kids.length
+      ? kids.map(([k, i]) => `<button data-i="${i}" class="${i === speaker ? 'on' : ''}">${k.name.replace(/[<>&"]/g, '')}</button>`).join('')
+      : '';
+  }
+  $('who').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const i = parseInt(b.dataset.i, 10);
+    speaker = speaker === i ? -1 : i;
+    store.set('speaker', String(speaker));
+    renderWho();
+    if (speaker >= 0) { play('wave'); speakAll('Coucou ' + family[speaker].name + ' !'); }
+  });
+  let draftFamily = [];
+  const esc = v => String(v ?? '').replace(/"/g, '&quot;');
+  function renderKids() {
+    $('kids').innerHTML = draftFamily.map((k, i) => `<div class="kid" data-i="${i}">
+      <input type="text" data-f="name" placeholder="Prénom" value="${esc(k.name)}">
+      <input type="text" data-f="age" placeholder="Âge" inputmode="numeric" value="${esc(k.age)}">
+      <input type="text" data-f="likes" placeholder="Il/elle aime…" value="${esc(k.likes)}">
+      <button class="x" type="button" data-del="${i}">✕</button></div>`).join('');
+  }
+  $('kids').addEventListener('input', e => {
+    const row = e.target.closest('.kid'); if (!row) return;
+    draftFamily[row.dataset.i][e.target.dataset.f] = e.target.value;
+  });
+  $('kids').addEventListener('click', e => {
+    if (e.target.dataset.del === undefined) return;
+    draftFamily.splice(+e.target.dataset.del, 1); renderKids();
+  });
+  $('addKid').addEventListener('click', () => { draftFamily.push({ name: '', age: '', likes: '' }); renderKids(); });
+  function renderMems() {
+    $('mems').innerHTML = memories.length
+      ? memories.map((m, i) => `<div class="mem"><span>${m.replace(/[<>&]/g, '')}</span><button class="x" type="button" data-m="${i}">✕</button></div>`).join('')
+        + '<button class="btn soft" type="button" id="clearMems">🧹 Tout effacer</button>'
+      : '<small>Pas encore de souvenirs.</small>';
+  }
+  $('mems').addEventListener('click', e => {
+    if (e.target.id === 'clearMems') { if (confirm('Effacer tous les souvenirs de Djimini ?')) { memories = []; saveMems(); renderMems(); } return; }
+    if (e.target.dataset.m === undefined) return;
+    memories.splice(+e.target.dataset.m, 1); saveMems(); renderMems();
+  });
+
+  function openSheet(tech) {
+    draftFamily = family.map(k => ({ ...k })); renderKids(); renderMems();
+    draftListen = S.listen; renderListen();
+    draftYt = S.yt; draftSp = S.sp; renderMediaSegs();
+    $('city').value = S.city;
+    draftProv = S.provider; renderProv();
+    draftMood = S.mood; draftAge = S.age;
+    renderMoods(); renderAge(); loadVoices();
+    $('apiKey').value = S.apiKey; $('model').value = S.model;
+    $('pitch').value = S.pitch; $('rate').value = S.rate;
+    $('tech').open = !!tech || !S.apiKey;
+    $('sheetBg').classList.add('open');
+  }
+  function readSheet() {
+    S.mood = draftMood; S.age = draftAge;
+    S.provider = draftProv;
+    S.apiKey = $('apiKey').value.trim();
+    const newModel = $('model').value.trim() || PROV[S.provider].def;
+    if (newModel !== S.model) { S.noThink = true; }   // nouveau modèle : on retente le mode rapide
+    S.model = newModel;
+    S.voice = $('voice').value; S.pitch = parseFloat($('pitch').value); S.rate = parseFloat($('rate').value);
+  }
+  $('setBtn').addEventListener('click', () => openSheet(false));
+  $('sheetBg').addEventListener('click', e => { if (e.target.id === 'sheetBg') { applyMood(); $('sheetBg').classList.remove('open'); } });
+  $('saveBtn').addEventListener('click', () => {
+    family = draftFamily.map(k => ({ name: (k.name || '').trim(), age: (k.age || '').trim(), likes: (k.likes || '').trim() })).filter(k => k.name);
+    saveFamily();
+    if (speaker >= family.length) { speaker = -1; store.set('speaker', '-1'); }
+    S.listen = draftListen; store.set('listen', S.listen);
+    S.yt = draftYt; S.sp = draftSp; store.set('yt', S.yt); store.set('sp', S.sp);
+    const newCity = $('city').value.trim();
+    if (newCity !== S.city) {
+      S.city = newCity; store.set('city', newCity); weatherCache = { t: 0, text: '' };
+      if (newCity) geocode(newCity).then(g => {
+        if (!g) { errorBox.textContent = "Je n'ai pas trouvé la ville « " + newCity + " » pour la météo."; return; }
+        S.lat = g.lat; S.lon = g.lon; store.set('lat', g.lat); store.set('lon', g.lon);
+        sayEl.textContent = 'Super, je connais la météo de ' + g.label + ' maintenant !';
+      }).catch(() => { errorBox.textContent = 'Impossible de trouver la ville pour la météo (internet ?).'; });
+    }
+    pauseStandby(); setTimeout(startStandby, 400);
+    renderWho();
+    readSheet();
+    ['provider', 'age', 'mood', 'voice', 'pitch', 'rate'].forEach(k => store.set(k, String(S[k])));
+    store.set('key_' + S.provider, S.apiKey); store.set('model_' + S.provider, S.model);
+    store.set('noThink', S.noThink ? '1' : '0');
+    applyMood();
+    $('sheetBg').classList.remove('open');
+    errorBox.textContent = '';
+  });
+  $('testVoice').addEventListener('click', () => {
+    const save = { ...S };
+    S.voice = $('voice').value; S.pitch = parseFloat($('pitch').value); S.rate = parseFloat($('rate').value);
+    speakAll("Coucou, c'est moi, Djimini Dod ! On joue ensemble ?");
+    Object.assign(S, { voice: save.voice, pitch: save.pitch, rate: save.rate });
+  });
+  $('resetChat').addEventListener('click', () => {
+    history = []; heard.textContent = '';
+    sayEl.textContent = 'On recommence ? Appuie sur le bouton bleu et parle-moi !';
+  });
+  const magicLink = () => {
+    const key = $('apiKey').value.trim();
+    const p = new URLSearchParams({ p: draftProv, cle: key, m: $('model').value.trim() || PROV[draftProv].def, mood: draftMood, age: draftAge });
+    return location.origin + location.pathname + '#' + p.toString();
+  };
+  $('shareBtn').addEventListener('click', () => {
+    if (!$('apiKey').value.trim()) { $('testResult').textContent = "❌ Colle d'abord ta clé."; return; }
+    const panel = $('sharePanel');
+    if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+    try { QR.draw($('shareQR'), magicLink()); panel.style.display = 'block'; }
+    catch (e) { $('testResult').textContent = '❌ QR impossible : ' + e.message; }
+  });
+  $('copyLink').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(magicLink()); $('copyLink').textContent = '✅ Lien copié'; }
+    catch { prompt('Copie ce lien :', magicLink()); }
+    setTimeout(() => $('copyLink').textContent = '📋 Copier le lien', 2000);
+  });
+  $('testConn').addEventListener('click', async () => {
+    const out = $('testResult'), key = $('apiKey').value.trim(), P = PROV[draftProv];
+    if (!key) { out.textContent = "❌ Colle d'abord ta clé."; return; }
+    out.textContent = '⏳ Test en cours…';
+    try {
+      const r = draftProv === 'gemini'
+        ? await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': key } })
+        : await fetch(P.list, { headers: { 'Authorization': 'Bearer ' + key } });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { out.textContent = `❌ ${P.name} refuse (${r.status}) : ${d?.error?.message || d?.message || r.statusText}`; return; }
+      let names = draftProv === 'gemini'
+        ? (d.models || []).filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace('models/', '')).filter(n => n.includes('flash') && !/tts|image/.test(n))
+        : (d.data || []).map(m => m.id).filter(n => !/whisper|tts|guard|embed|ocr|moderation|orpheus|playai|vision/i.test(n));
+      $('models').innerHTML = names.map(n => `<option value="${n}">`).join('');
+      out.textContent = `✅ Internet et clé ${P.name} OK.\nModèles disponibles :\n` + (names.join('\n') || '(aucun)');
+    } catch (e) { out.textContent = `❌ Impossible de joindre ${P.name} : ` + e.message; }
+  });
+
+  // installation comme appli (seulement sur le vrai site, pas en fichier local)
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  setState('idle');
+  renderWho();
+  setTimeout(startStandby, 800);
+  if (magicOk) sayEl.textContent = "Youpi, je suis installé sur cet appareil ! Appuie sur le bouton bleu et parle-moi.";
+  if (!S.apiKey) openSheet(true);
+})();
+</script>
+</body>
+</html>
